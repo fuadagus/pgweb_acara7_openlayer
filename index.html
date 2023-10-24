@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>OpenLayers Map with Custom Markers and Labels</title>
+    <link rel="stylesheet" href="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.3.0/css/ol.css"
+        type="text/css">
+    <script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.3.0/build/ol.js"></script>
+
+    <style>
+        .map {
+            width: 100%;
+            height: 95vh;
+        }
+
+        .marker-label {
+            background: white;
+            border: 1px solid #ccc;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+            position: absolute;
+        }
+
+        .photo-viewer {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 2;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+
+        #photo {
+            max-width: 100%;
+            height: auto;
+        }
+
+        #photo-caption {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map" class="map"></div>
+
+    <button id="zoom-out">Zoom out</button>
+    <button id="zoom-in">Zoom in</button>
+    <div id="photo-viewer" class="photo-viewer">
+        <img id="photo" src="" alt="Photo">
+        <div id="photo-caption" class="photo-caption"></div>
+    </div>
+    <script>
+        var locations = [
+            [-7.811828, 110.363017, 'Alun-alun Kidul', 'https://cdn.nativeindonesia.com/foto/alun-alun-kidul/Ikon-Alun-Alun-Kidul-Yogyakarta.jpg'],
+            [-7.786086, 110.431435, 'Bandar Udara Adisucipto', 'https://www.balipost.com/wp-content/uploads/2017/07/balipostcom_layanan-informasi-bandara-adisutjipto-gunakan-tiga-bahasa_01-696x464.jpg'],
+            [-7.770963, 110.377539, 'UGM', 'https://media.beritagar.id/2016-08/original_1366/1400x788_0_0_1400_788_7ffb77b3b0363fb27f395df6beae6bacd6d9f4f1.jpg'],
+            [-7.982573, 110.205277, 'Muara Kaliprogo', 'https://johansurya.id/wp-content/uploads/sungai-progo-yogya-gua-maria-jatiningsih.jpg'],
+            [-7.544741, 110.443663, 'Merapi', 'http://3.bp.blogspot.com/-vfEv_200R94/Uh0IoJHmquI/AAAAAAAABpc/_2KhQ-VAFx0/s1600/MERAPI1.jpg']
+        ];
+
+        var vectorSource = new ol.source.Vector();
+
+
+
+        var map = new ol.Map({
+            target: 'map',
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.OSM(),
+                }),
+                new ol.layer.Vector({
+                    source: vectorSource,
+                }),
+            ],
+            view: new ol.View({
+                center: ol.proj.fromLonLat([110.377539, -7.770963]),
+                zoom: 10,
+            }),
+        });
+
+        document.getElementById('zoom-out').onclick = function () {
+            var view = map.getView();
+            var zoom = view.getZoom();
+            view.setZoom(zoom - 1);
+        };
+
+        document.getElementById('zoom-in').onclick = function () {
+            var view = map.getView();
+            var zoom = view.getZoom();
+            view.setZoom(zoom + 1);
+        };
+        var photoViewer = document.getElementById('photo-viewer');
+        var photo = document.getElementById('photo');
+        var photoCaption = document.getElementById('photo-caption');
+
+   
+        photoViewer.style.display = 'none';
+
+        map.on('click', function (e) {
+            map.forEachFeatureAtPixel(e.pixel, function (feature) {
+                var geometry = feature.getGeometry();
+                var coord = geometry.getCoordinates();
+                var caption = feature.get('caption');
+                var photoURL = feature.get('photoURL'); 
+
+            
+                photo.src = photoURL; 
+                photoCaption.textContent = caption;
+                photoViewer.style.display = 'block';
+
+            
+                photoViewer.style.left = (e.pixel[0] + 10) + 'px';
+                photoViewer.style.top = (e.pixel[1] + 10) + 'px';
+            });
+        });
+        for (var i = 0; i < locations.length; i++) {
+            var lon = locations[i][1];
+            var lat = locations[i][0];
+            var label = locations[i][2];
+            var photoURL = locations[i][3];
+
+            var point = new ol.geom.Point(ol.proj.fromLonLat([lon, lat]));
+            var feature = new ol.Feature({
+                geometry: point,
+            });
+
+            feature.set('caption', label); 
+            feature.set('photoURL', photoURL);
+
+            var markerStyle = new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: 8,
+                    fill: new ol.style.Fill({
+                        color: 'red',
+                    }),
+                    stroke: new ol.style.Stroke({
+                        color: 'black',
+                        width: 2,
+                    }),
+                }),
+            });
+
+            feature.setStyle(markerStyle);
+            vectorSource.addFeature(feature);
+        }
+        document.getElementById('photo-viewer').onclick = function () {
+            photoViewer.style.display = 'none';
+        };
+    </script>
+</body>
+
+</html>
